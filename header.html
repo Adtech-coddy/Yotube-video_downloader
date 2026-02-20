@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Downloader</title>
+    <link rel="stylesheet" href="header.css">
+    <link rel="stylesheet" href="responsive.css">
+    <link rel="icon" href="logo/cloud-arrow-down-solid.svg">
+</head>
+
+<body>
+
+<!-- NAVIGATION BAR -->
+<nav class="navbar">
+    <div class="left-section">
+        <a href="header.html">Video Saver</a>
+    </div>
+
+    <div class="logo">
+        <img class="ol-logo" src="logo/cloud-arrow-down-solid (2).svg" alt="header.html">
+    </div>
+
+    <div class="navbar__toggle" id="mobile-menu">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+    </div>
+
+    <div class="right-section">
+        <a href="header.html" target="_blank" class="navbar__links">Home</a>
+        <a href="supported.html" target="_blank" class="navbar__links">Supported Sites</a>
+        <a href="tutorial.html" class="navbar__links">How it works</a>
+    </div>
+</nav>
+
+<nav class="nav-right" id="nav-links">
+    <a href="header.html" target="_blank">Home</a>
+    <a href="supported.html" target="_blank">Supported Sites</a>
+    <a href="tutorial.html" target="_blank">How it works</a>
+</nav>
+
+
+<!-- MAIN CONTENT -->
+<div class="content">
+    <p class="title">Video Downloader</p>
+
+    <!-- Status message (JS writes here) -->
+    <p id="status"></p>
+
+    <div class="in-con">
+        <input class="Link-Search" type="text" placeholder="Paste your video link here">
+        <button onclick="download()" class="dl-button">Download</button>
+    </div>
+
+    <!-- Thumbnail container (JS controls visibility) -->
+    <div id="thumbnail" style="display:none; text-align:center; margin-top: 1rem;">
+        <img id="thumb-img" src="" alt="Video thumbnail"
+             style="max-width: 300px; border-radius: 10px;" />
+    </div>
+
+    <!-- This text stays below the thumbnail -->
+    <p class="mt">
+        Paste a video URL from YouTube, Vimeo, Facebook, and 1000+ other sites to download in HD quality.
+    </p>
+</div>
+
+
+<!-- WHY CHOOSE SECTION -->
+<div class="pur" style="margin-top: 4rem;">
+    <h1 class="pur-text"
+        style="display: flex; justify-content: center; margin-bottom: 3rem; font-family: system-ui;">
+        Why Choose Multi-Platform Video Saver?
+    </h1>
+
+    <section class="features">
+        <div class="feature-card">
+            <div class="icon">🎬</div>
+            <h3>Multiple formats</h3>
+            <p>Download MP4, MP3, WebM and more with HD options.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="icon">✅</div>
+            <h3>No Registration</h3>
+            <p>Just paste and download instantly—no signup required.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="icon">🔒</div>
+            <h3>Secure & Private</h3>
+            <p>Your downloads are processed securely without storing personal data.</p>
+        </div>
+    </section>
+</div>
+
+
+<!-- FOOTER -->
+<footer style="margin-top: 4rem; text-align: center;">
+    &copy; 2025 Multi-Platform Video Saver — All rights reserved
+</footer>
+
+
+<!-- JAVASCRIPT -->
+<script src="header.js"></script>
+<script src="hamburger.js"></script>
+
+</body>
+</html>

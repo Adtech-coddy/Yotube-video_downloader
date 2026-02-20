@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clone</title>
+    <link rel="stylesheet" href="header.css">
+    <link rel="icon" href="logo\cloud-arrow-down-solid.svg">
+</head>
+<body>
+ <nav class="navbar">
+    <div class="left-section">
+        <a href="header.html">Youtube Video Saver</a>
+    </div>
+    <div class="logo">
+        <img class="ol-logo" src="logo\cloud-arrow-down-solid (2).svg" alt="header.html">
+    </div>
+
+    <!-- Hamburger icon -->
+    <div class="navbar__toggle" id="mobile-menu">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+    </div>
+
+    <!-- Right section with menu items -->
+    <div class="right-section navbar__menu">
+        <a href="header.html" target="_blank" class="navbar__links">Home</a>
+        <a href="facebook.html" target="_blank" class="navbar__links">Supported Sites</a>
+        <a href="instagram.html" class="navbar__links">How it works</a>
+    </div>
+</nav>
+
+   <div class="content">
+    <p class="title">Youtube Video Downloader</p>
+    <p id="status"></p>
+    <div class="in-con">
+        <input class="Link-Search" type="text" placeholder="Paste your video link here">
+        <button onclick = "download()" class="dl-button">Download</button>
+    </div>
+    <div id="thumbnail" style="display:none; text-align:center; margin-top: 1rem; justify-content: center; align-self: center;">
+        <img id="thumb-img" src="" alt="Video thumbnail" style="max-width: 300px; border-radius: 10px; justify-content: center; align-self: center;" />
+    </div>
+    <p class="mt">
+        Paste a video URL from YouTube, Vimeo, Facebook, and 1000+ other sites to download in HD quality.
+    </p>
+   </div>
+
+   <div class="pur" style="margin-top: 4rem;"> <!-- Reduced margin -->
+    <h1 class="pur-text" style="display: flex; justify-content: center; margin-bottom: 3rem; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">
+        Why Choose Multi-Platform Video saver?
+    </h1>
+
+    <section class="features">
+        <div class="feature-card">
+            <div class="icon">🎬</div>
+            <h3>Multiple formats</h3>
+            <p>Download in MP4, MP3, WebM and other formats with high quality options.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="icon">✅</div>
+            <h3>No Registration</h3>
+            <p>No signup required. Just paste and download instantly without any hassle.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="icon">🔒</div>
+            <h3>Secure and Private </h3>
+            <p>Your downloads are process securely without storing your data.</p>
+        </div>
+    </section>
+   </div>
+
+   <footer style="margin-top: 4rem; text-align: center;"> <!-- Reduced gap -->
+    &copy; 2025 Multi-Platform Video Saver All right reserved
+   </footer>
+
+   <script src="header.js"></script>
+</body>
+</html>
