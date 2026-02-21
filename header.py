@@ -20,12 +20,11 @@ def serve_static(filename):
 
 
 # ---------------------------
-# Common yt-dlp options (B2)
+# Common yt-dlp options (UPDATED)
 # ---------------------------
 def _common_ytdlp_opts(outtmpl=None):
     """
-    Use player clients that typically expose HD formats.
-    Do NOT skip dash/hls — we want DASH/HLS formats included.
+    Cleaner, more reliable config for better format exposure.
     """
     opts = {
         "quiet": True,
@@ -33,24 +32,16 @@ def _common_ytdlp_opts(outtmpl=None):
         "nocheckcertificate": True,
         "retries": 5,
         "fragment_retries": 5,
+        "format_sort": ["res", "fps", "br"],  # prioritize higher resolution
         "http_headers": {
-            # Android-like UA often returns richer format lists
             "User-Agent": "Mozilla/5.0 (Linux; Android 13)"
         },
         "extractor_args": {
             "youtube": {
-                "player_client": [
-                    "android",
-                    "android_creator",
-                    "ios",
-                    "tv_embedded",
-                    "mobile"
-                ],
-                # Ensure we do not skip DASH/HLS
+                "player_client": ["android"],  # IMPORTANT FIX
                 "skip": []
             }
         },
-        # Make JSON parsing robust
         "forcejson": False,
     }
 
@@ -106,26 +97,24 @@ def api_info():
         raw_formats = info.get("formats") or []
 
         # Build grouped format lists (cleaned)
-        combined = []   # formats that already have video+audio (height + acodec not none)
-        video_only = [] # formats with vcodec != none and (acodec none or height present but acodec none) - usually DASH
-        audio_only = [] # formats with no height and have acodec
+        combined = []   # formats that already have video+audio
+        video_only = [] # video without audio
+        audio_only = [] # audio only
 
-        # Track highest resolution found
         max_height = 0
 
         for f in raw_formats:
             fmt_id = f.get("format_id")
             ext = f.get("ext") or ""
-            height = f.get("height")  # may be None
+            height = f.get("height")
             vcodec = f.get("vcodec")
             acodec = f.get("acodec")
             filesize = f.get("filesize") or f.get("filesize_approx")
             fps = f.get("fps")
-            tbr = f.get("tbr") or f.get("abr")  # bitrate
+            tbr = f.get("tbr") or f.get("abr")
 
-            # Combined (video+audio) - some formats come with both
             if height and acodec not in (None, "none") and vcodec not in (None, "none"):
-                item = {
+                combined.append({
                     "format_id": fmt_id,
                     "ext": ext,
                     "resolution": f"{height}p",
@@ -134,13 +123,10 @@ def api_info():
                     "bitrate": tbr,
                     "filesize": human_size(filesize),
                     "note": f.get("format_note")
-                }
-                combined.append(item)
+                })
                 max_height = max(max_height, height)
-
-            # Video-only (DASH) - has vcodec, has height, but audio missing/none
             elif height and vcodec not in (None, "none") and acodec in (None, "none"):
-                item = {
+                video_only.append({
                     "format_id": fmt_id,
                     "ext": ext,
                     "resolution": f"{height}p",
@@ -149,25 +135,18 @@ def api_info():
                     "bitrate": tbr,
                     "filesize": human_size(filesize),
                     "note": f.get("format_note")
-                }
-                video_only.append(item)
+                })
                 max_height = max(max_height, height)
-
-            # Audio-only
             elif not height and acodec not in (None, "none"):
-                abr = f.get("abr") or 0
-                item = {
+                audio_only.append({
                     "format_id": fmt_id,
                     "ext": ext,
-                    "abr": abr,
+                    "abr": f.get("abr") or 0,
                     "bitrate": tbr,
                     "filesize": human_size(filesize),
                     "note": f.get("format_note")
-                }
-                audio_only.append(item)
+                })
 
-        # Deduplicate format ids across groups (keep combined separate)
-        # Some formats may appear duplicated; ensuring uniqueness by format_id
         def uniq_by_id(lst):
             seen = set()
             out = []
@@ -181,7 +160,6 @@ def api_info():
         video_only = sorted(uniq_by_id(video_only), key=lambda x: (x.get("height") or 0), reverse=True)
         audio_only = sorted(uniq_by_id(audio_only), key=lambda x: (x.get("abr") or 0), reverse=True)
 
-        # Determine if formats are limited (only <=360p)
         limited = True
         if max_height and max_height > 360:
             limited = False
@@ -206,12 +184,6 @@ def api_info():
 
 # ---------------------------
 # API: DOWNLOAD selected format
-# Client must POST JSON:
-# {
-#   "url": "...",
-#   "format_id": "251",           # the format id chosen from /api/info
-#   "format_kind": "combined"     # one of "combined","video_only","audio_only"
-# }
 # ---------------------------
 @app.route('/api/download', methods=['POST'])
 def api_download():
@@ -223,41 +195,42 @@ def api_download():
     if not video_url or not format_id:
         return jsonify({"error": "Missing url or format_id"}), 400
 
-    # output filename
-    out_name = f"{uuid.uuid4()}.%(ext)s"
-    filepath_template = os.path.join(DOWNLOAD_FOLDER, out_name)
+    # First, get video info to fetch the title
+    try:
+        with yt_dlp.YoutubeDL(_common_ytdlp_opts()) as ydl:
+            info = ydl.extract_info(video_url, download=False)
+        video_title = sanitize_filename(info.get("title", "video"))
+    except Exception as e:
+        video_title = "video"  # fallback title
 
-    # build ytdlp options
+    # output filename template
+    filepath_template = os.path.join(DOWNLOAD_FOLDER, video_title + ".%(ext)s")
+
+    # build yt-dlp options
     ydl_opts = _common_ytdlp_opts(outtmpl=filepath_template)
 
-    # Decide actual format string to request from yt-dlp
-    # - If combined: ask for that format id directly (it has audio+video)
-    # - If video_only: request format_id + best audio and merge to mp4
-    # - If audio_only: request that audio format (no merge)
     if format_kind == "video_only":
-        # combine video-only with best audio (prefer m4a/mp4 compatible)
         requested_format = f"{format_id}+bestaudio[ext=m4a]/bestaudio/best"
         ydl_opts.update({
             "format": requested_format,
-            "merge_output_format": "mp4"  # ensure final is mp4 when merging
+            "merge_output_format": "mp4",   # force merged filename to match outtmpl
         })
     elif format_kind == "audio_only":
         ydl_opts.update({
-            "format": format_id  # should be an audio format id like 251 or similar
+            "format": format_id
         })
     else:
-        # default: treat as combined (video+audio present)
+        # combined format
         ydl_opts.update({
             "format": format_id,
-            "merge_output_format": "mp4"
+            "merge_output_format": "mp4"  # optional, ensures mp4
         })
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # download returns list of files created; yt-dlp names final extension based on chosen format
             ydl.download([video_url])
 
-        # find the actual produced file in DOWNLOAD_FOLDER (newest)
+        # find produced file
         files = sorted(
             (os.path.join(DOWNLOAD_FOLDER, f) for f in os.listdir(DOWNLOAD_FOLDER)),
             key=lambda p: os.path.getmtime(p),
@@ -275,7 +248,7 @@ def api_download():
 
 
 # ---------------------------
-# API: Download audio-only as MP3 (convenience)
+# API: Download audio-only as MP3
 # ---------------------------
 @app.route('/api/download_audio', methods=['POST'])
 def api_download_audio():
@@ -316,7 +289,5 @@ def serve_file(filename):
         return send_file(path, as_attachment=True)
     return jsonify({"error": "File not found"}), 404
 
-
 if __name__ == "__main__":
-    # debug on for now; set debug=False in production
-    app.run(debug=True, host="0.0.0.0", port=8080)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
